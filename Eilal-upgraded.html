@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d0d1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>סריקת ברקודים</title>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
+<style>
+:root {
+  --bg: #0d0d1a;
+  --surface: #15151f;
+  --surface2: #1e1e2e;
+  --surface3: #252538;
+  --border: #2a2a42;
+  --accent: #6c63ff;
+  --accent2: #ff6584;
+  --green: #43e97b;
+  --yellow: #f9ca24;
+  --red: #ff6b6b;
+  --text: #eeeef5;
+  --text2: #9999bb;
+  --text3: #555575;
+  --radius: 16px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Rubik', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse 50% 40% at 80% 0%, rgba(108,99,255,0.1) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 10% 90%, rgba(255,101,132,0.07) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+
+.app { max-width: 640px; margin: 0 auto; padding: 0 16px 100px; position: relative; z-index: 1; }
+
+/* Header */
+.header {
+  padding: 50px 0 24px;
+  display: flex; align-items: center; gap: 12px;
+}
+
+.header-icon {
+  width: 46px; height: 46px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  box-shadow: 0 6px 20px rgba(108,99,255,0.4);
+}
+
+.header h1 {
+  font-size: 1.5rem; font-weight: 900;
+  background: linear-gradient(135deg, var(--text), var(--text2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+
+/* Tabs */
+.tabs {
+  display: flex; gap: 4px;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+}
+
+.tab {
+  flex: 1; padding: 10px;
+  border-radius: 9px; border: none;
+  background: transparent;
+  color: var(--text2);
+  font-family: 'Rubik', sans-serif;
+  font-size: 0.85rem; font-weight: 500;
+  cursor: pointer; transition: all 0.2s;
+}
+
+.tab.active {
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 4px 12px rgba(108,99,255,0.4);
+}
+
+/* Panels */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Scanner card */
+.scan-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.scan-card-title {
+  font-size: 0.75rem;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.input-row {
+  display: flex; gap: 8px; margin-bottom: 12px;
+}
+
+.barcode-input {
+  flex: 1;
+  background: var(--surface2);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: var(--text);
+  font-family: 'Rubik', sans-serif;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.barcode-input:focus { border-color: var(--accent); }
+
+.btn {
+  padding: 12px 16px;
+  border-radius: 10px; border: none;
+  font-family: 'Rubik', sans-serif;
+  font-weight: 600; font-size: 0.9rem;
+  cursor: pointer; transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: white;
+  box-shadow: 0 4px 14px rgba(108,99,255,0.35);
+}
+
+.btn-primary:hover { transform: translateY(-1px); opacity: 0.9; }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-secondary {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+}
+
+.btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-camera {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  font-size: 1.2rem;
+  padding: 12px 14px;
+}
+
+.btn-camera:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Camera view */
+#cameraView {
+  display: none;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  margin-bottom: 12px;
+}
+
+#cameraView video {
+  width: 100%;
+  border-radius: 12px;
+}
+
+.camera-overlay {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+
+.scan-frame {
+  width: 60%; aspect-ratio: 1;
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
+  position: relative;
+}
+
+.scan-line {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: scanMove 2s ease-in-out infinite;
+}
+
+@keyframes scanMove {
+  0% { top: 0; }
+  100% { top: calc(100% - 2px); }
+}
+
+.btn-stop-camera {
+  position: absolute;
+  top: 10px; left: 10px;
+  background: rgba(0,0,0,0.7);
+  border: none; border-radius: 8px;
+  color: white; font-family: 'Rubik', sans-serif;
+  font-size: 0.8rem; padding: 6px 12px;
+  cursor: pointer;
+}
+
+/* Product card */
+.product-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 16px;
+  animation: fadeUp 0.3s ease;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.product-img-wrap {
+  width: 100%;
+  height: 180px;
+  background: var(--surface2);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+
+.product-img-wrap img { max-height: 100%; max-width: 100%; object-fit: contain; }
+.product-img-wrap .no-img { font-size: 3rem; opacity: 0.3; }
+
+.product-info { padding: 16px; }
+
+.product-name {
+  font-size: 1.1rem; font-weight: 700;
+  margin-bottom: 4px; line-height: 1.3;
+}
+
+.product-brand {
+  font-size: 0.85rem; color: var(--text2);
+  margin-bottom: 14px;
+}
+
+.product-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+
+.ptag {
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  border-radius: 50px;
+  font-weight: 500;
+}
+
+.ptag-green { background: rgba(67,233,123,0.12); color: var(--green); border: 1px solid rgba(67,233,123,0.25); }
+.ptag-yellow { background: rgba(249,202,36,0.12); color: var(--yellow); border: 1px solid rgba(249,202,36,0.25); }
+.ptag-red { background: rgba(255,107,107,0.12); color: var(--red); border: 1px solid rgba(255,107,107,0.25); }
+.ptag-blue { background: rgba(108,99,255,0.12); color: #9b95ff; border: 1px solid rgba(108,99,255,0.25); }
+
+.product-actions { display: flex; gap: 8px; }
+
+/* Nutri score */
+.nutri-bar {
+  display: flex; gap: 3px; margin-bottom: 14px;
+}
+
+.nutri-block {
+  flex: 1; height: 6px; border-radius: 3px;
+  background: var(--surface3);
+}
+
+.nutri-a { background: #1a9e1a; }
+.nutri-b { background: #85bb2f; }
+.nutri-c { background: #f0a500; }
+.nutri-d { background: #e3530a; }
+.nutri-e { background: #cc1414; }
+
+/* Loading */
+.loading-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 40px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Error card */
+.error-card {
+  background: rgba(255,107,107,0.08);
+  border: 1px solid rgba(255,107,107,0.25);
+  border-radius: var(--radius);
+  padding: 20px; text-align: center;
+  margin-bottom: 16px;
+  color: var(--red);
+}
+
+/* Cart & History items */
+.item-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  transition: all 0.2s;
+  animation: fadeUp 0.25s ease;
+}
+
+.item-card:hover { border-color: var(--border); transform: translateY(-1px); }
+
+.item-thumb {
+  width: 50px; height: 50px;
+  background: var(--surface2);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; overflow: hidden;
+  font-size: 1.4rem;
+}
+
+.item-thumb img { width: 100%; height: 100%; object-fit: contain; }
+
+.item-info { flex: 1; min-width: 0; }
+.item-name { font-size: 0.92rem; font-weight: 600; margin-bottom: 3px; }
+.item-brand { font-size: 0.78rem; color: var(--text2); }
+
+.item-del {
+  width: 32px; height: 32px;
+  border-radius: 8px; border: 1px solid transparent;
+  background: transparent; color: var(--text3);
+  cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.9rem; flex-shrink: 0;
+}
+
+.item-del:hover { background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.3); color: var(--red); }
+
+/* Empty */
+.empty { text-align: center; padding: 50px 20px; color: var(--text3); }
+.empty-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.4; }
+
+/* Section header */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-title { font-size: 0.95rem; font-weight: 700; }
+.section-count {
+  font-size: 0.75rem; padding: 3px 10px;
+  background: var(--surface2); border-radius: 50px;
+  color: var(--text2); border: 1px solid var(--border);
+}
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 50px; padding: 10px 20px;
+  font-size: 0.85rem; font-weight: 500;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  opacity: 0; transition: all 0.3s;
+  pointer-events: none; z-index: 999;
+  white-space: nowrap;
+}
+
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Barcode number display */
+.barcode-display {
+  font-size: 0.75rem; color: var(--text3);
+  text-align: center; margin-top: 8px;
+  font-family: monospace; letter-spacing: 2px;
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-icon">🔍</div>
+    <h1>סריקת ברקודים</h1>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('scan', this)">📷 סריקה</button>
+    <button class="tab" onclick="switchTab('cart', this)">🛒 רשימה</button>
+    <button class="tab" onclick="switchTab('history', this)">📋 היסטוריה</button>
+  </div>
+
+  <!-- SCAN PANEL -->
+  <div class="panel active" id="panel-scan">
+    <div class="scan-card">
+      <div class="scan-card-title">✦ הכנס ברקוד</div>
+      <div class="input-row">
+        <input type="text" class="barcode-input" id="barcodeInput"
+          placeholder="729... הכנס מספר ברקוד" inputmode="numeric">
+        <button class="btn btn-camera" onclick="toggleCamera()" id="cameraBtn" title="פתח מצלמה">📷</button>
+        <button class="btn btn-primary" onclick="scanBarcode()">סרוק</button>
+      </div>
+
+      <!-- Camera -->
+      <div id="cameraView">
+        <video id="cameraFeed" autoplay playsinline muted></video>
+        <div class="camera-overlay">
+          <div class="scan-frame"><div class="scan-line"></div></div>
+        </div>
+        <button class="btn-stop-camera" onclick="stopCamera()">✕ סגור</button>
+      </div>
+
+      <button class="btn btn-secondary" style="width:100%" onclick="clearProduct()">נקה</button>
+    </div>
+
+    <div id="productArea"></div>
+  </div>
+
+  <!-- CART PANEL -->
+  <div class="panel" id="panel-cart">
+    <div class="section-header">
+      <span class="section-title">🛒 רשימת קניות</span>
+      <span class="section-count" id="cartCount">0</span>
+    </div>
+    <div id="cartContainer"></div>
+  </div>
+
+  <!-- HISTORY PANEL -->
+  <div class="panel" id="panel-history">
+    <div class="section-header">
+      <span class="section-title">📋 היסטוריית סריקות</span>
+      <button class="btn btn-secondary" style="font-size:0.78rem;padding:6px 12px" onclick="clearHistory()">נקה הכל</button>
+    </div>
+    <div id="historyContainer"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let currentProduct = null;
+let cart = JSON.parse(localStorage.getItem('barcode-cart')) || [];
+let history = JSON.parse(localStorage.getItem('barcode-history')) || [];
+let cameraStream = null;
+let scanInterval = null;
+
+function showToast(msg, duration=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+  if (name === 'cart') renderCart();
+  if (name === 'history') renderHistory();
+}
+
+// Nutri-Score color
+function nutriColor(score) {
+  if (!score) return null;
+  const s = score.toLowerCase();
+  if (s==='a') return 'ptag-green';
+  if (s==='b') return 'ptag-green';
+  if (s==='c') return 'ptag-yellow';
+  if (s==='d') return 'ptag-red';
+  if (s==='e') return 'ptag-red';
+  return 'ptag-blue';
+}
+
+async function fetchProduct(barcode) {
+  // Try Open Food Facts API
+  const url = `https://world.openfoodfacts.org/api/v0/product/${barcode}.json`;
+  const res = await fetch(url);
+  const data = await res.json();
+
+  if (data.status === 1 && data.product) {
+    const p = data.product;
+    return {
+      code: barcode,
+      name: p.product_name_he || p.product_name || p.product_name_en || 'מוצר לא ידוע',
+      brand: p.brands || 'לא ידוע',
+      ingredients: p.ingredients_text_he || p.ingredients_text || null,
+      image: p.image_front_url || p.image_url || null,
+      nutriscore: p.nutriscore_grade || null,
+      categories: p.categories_tags ? p.categories_tags.slice(0,3).map(c=>c.replace('en:','').replace('he:','')).join(', ') : null,
+      quantity: p.quantity || null,
+      found: true
+    };
+  }
+
+  return {
+    code: barcode,
+    name: 'מוצר לא נמצא',
+    brand: 'ברקוד: ' + barcode,
+    image: null,
+    found: false
+  };
+}
+
+async function scanBarcode() {
+  const barcode = document.getElementById('barcodeInput').value.trim();
+  if (!barcode) { showToast('⚠️ הכנס מספר ברקוד'); return; }
+
+  stopCamera();
+
+  // Show loading
+  document.getElementById('productArea').innerHTML = `
+    <div class="loading-card">
+      <div class="spinner"></div>
+      <p style="color:var(--text2);font-size:0.9rem">מחפש מוצר...</p>
+      <div class="barcode-display">${barcode}</div>
+    </div>`;
+
+  try {
+    const product = await fetchProduct(barcode);
+    currentProduct = product;
+
+    // Add to history
+    history = history.filter(h => h.code !== barcode);
+    history.unshift({ ...product, scannedAt: Date.now() });
+    if (history.length > 50) history = history.slice(0, 50);
+    localStorage.setItem('barcode-history', JSON.stringify(history));
+
+    renderProduct(product);
+  } catch(e) {
+    document.getElementById('productArea').innerHTML = `
+      <div class="error-card">
+        <div style="font-size:2rem;margin-bottom:8px">⚠️</div>
+        <p>שגיאה בחיפוש המוצר<br><span style="font-size:0.8rem;opacity:0.7">בדוק את החיבור לאינטרנט</span></p>
+      </div>`;
+  }
+}
+
+function renderProduct(p) {
+  const nutriTag = p.nutriscore ?
+    `<span class="ptag ${nutriColor(p.nutriscore)}">Nutri-Score ${p.nutriscore.toUpperCase()}</span>` : '';
+  const catTag = p.categories ?
+    `<span class="ptag ptag-blue">${p.categories.split(',')[0]}</span>` : '';
+  const qtyTag = p.quantity ?
+    `<span class="ptag ptag-yellow">${p.quantity}</span>` : '';
+
+  const inCart = cart.some(i => i.code === p.code);
+
+  document.getElementById('productArea').innerHTML = `
+    <div class="product-card">
+      <div class="product-img-wrap">
+        ${p.image
+          ? `<img src="${p.image}" alt="${p.name}" onerror="this.parentElement.innerHTML='<span class=no-img>📦</span>'">`
+          : `<span class="no-img">📦</span>`}
+      </div>
+      <div class="product-info">
+        <div class="product-name">${p.name}</div>
+        <div class="product-brand">${p.brand}</div>
+        ${p.found ? `<div class="product-tags">${nutriTag}${catTag}${qtyTag}</div>` : ''}
+        ${p.ingredients ? `<div style="font-size:0.78rem;color:var(--text2);margin-bottom:14px;line-height:1.5"><b>מרכיבים:</b> ${p.ingredients.slice(0,200)}${p.ingredients.length>200?'...':''}</div>` : ''}
+        <div class="product-actions">
+          <button class="btn btn-primary" style="flex:1" onclick="addToCart()" id="addCartBtn">
+            ${inCart ? '✅ ברשימה' : '🛒 הוסף לרשימה'}
+          </button>
+          <button class="btn btn-secondary" onclick="clearProduct()">✕</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function clearProduct() {
+  currentProduct = null;
+  document.getElementById('productArea').innerHTML = '';
+  document.getElementById('barcodeInput').value = '';
+}
+
+function addToCart() {
+  if (!currentProduct) return;
+  if (cart.some(i => i.code === currentProduct.code)) {
+    showToast('✅ המוצר כבר ברשימה');
+    return;
+  }
+  cart.unshift({ ...currentProduct, addedAt: Date.now() });
+  localStorage.setItem('barcode-cart', JSON.stringify(cart));
+  document.getElementById('addCartBtn').textContent = '✅ ברשימה';
+  showToast('🛒 נוסף לרשימת הקניות!');
+  renderCart();
+}
+
+function removeFromCart(code) {
+  cart = cart.filter(i => i.code !== code);
+  localStorage.setItem('barcode-cart', JSON.stringify(cart));
+  renderCart();
+  showToast('🗑 הוסר מהרשימה');
+}
+
+function renderCart() {
+  const container = document.getElementById('cartContainer');
+  document.getElementById('cartCount').textContent = cart.length;
+
+  if (cart.length === 0) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">🛒</div><p>הרשימה ריקה</p></div>`;
+    return;
+  }
+
+  container.innerHTML = cart.map(item => `
+    <div class="item-card">
+      <div class="item-thumb">
+        ${item.image
+          ? `<img src="${item.image}" alt="${item.name}" onerror="this.style.display='none'">`
+          : '📦'}
+      </div>
+      <div class="item-info">
+        <div class="item-name">${item.name}</div>
+        <div class="item-brand">${item.brand}</div>
+      </div>
+      <button class="item-del" onclick="removeFromCart('${item.code}')">🗑</button>
+    </div>
+  `).join('');
+}
+
+function renderHistory() {
+  const container = document.getElementById('historyContainer');
+  if (history.length === 0) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">📋</div><p>אין היסטוריה</p></div>`;
+    return;
+  }
+
+  container.innerHTML = history.map(item => `
+    <div class="item-card" onclick="loadFromHistory('${item.code}')" style="cursor:pointer">
+      <div class="item-thumb">
+        ${item.image
+          ? `<img src="${item.image}" alt="${item.name}" onerror="this.style.display='none'">`
+          : '📦'}
+      </div>
+      <div class="item-info">
+        <div class="item-name">${item.name}</div>
+        <div class="item-brand">${item.brand} · ${item.code}</div>
+      </div>
+      <span style="font-size:0.7rem;color:var(--text3)">↩</span>
+    </div>
+  `).join('');
+}
+
+function loadFromHistory(code) {
+  document.getElementById('barcodeInput').value = code;
+  switchTab('scan', document.querySelectorAll('.tab')[0]);
+  scanBarcode();
+}
+
+function clearHistory() {
+  if (!confirm('למחוק את כל ההיסטוריה?')) return;
+  history = [];
+  localStorage.removeItem('barcode-history');
+  renderHistory();
+  showToast('🗑 ההיסטוריה נמחקה');
+}
+
+// Camera
+async function toggleCamera() {
+  const view = document.getElementById('cameraView');
+  if (view.style.display === 'block') { stopCamera(); return; }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 } }
+    });
+    cameraStream = stream;
+    const video = document.getElementById('cameraFeed');
+    video.srcObject = stream;
+    view.style.display = 'block';
+    showToast('📷 כוון את המצלמה לברקוד');
+
+    // Basic barcode detection via manual entry prompt after 5 sec
+    // For full scanning, user can also type manually
+    startBarcodeDetection(video);
+  } catch(e) {
+    showToast('❌ לא ניתן לגשת למצלמה');
+  }
+}
+
+function startBarcodeDetection(video) {
+  // Use BarcodeDetector if available (Chrome Android)
+  if ('BarcodeDetector' in window) {
+    const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128'] });
+    scanInterval = setInterval(async () => {
+      try {
+        const barcodes = await detector.detect(video);
+        if (barcodes.length > 0) {
+          const code = barcodes[0].rawValue;
+          document.getElementById('barcodeInput').value = code;
+          stopCamera();
+          scanBarcode();
+        }
+      } catch(e) {}
+    }, 500);
+  }
+}
+
+function stopCamera() {
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = null;
+  }
+  if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+  document.getElementById('cameraView').style.display = 'none';
+}
+
+// Enter key
+document.getElementById('barcodeInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') scanBarcode();
+});
+
+// Init
+renderCart();
+</script>
+</body>
+</html>
